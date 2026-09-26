@@ -243,9 +243,9 @@ def player_status(info, player_name):
 
     for name in info["starting_players"]:
         if normalize_name(name) == target:
-            return "先発"
+            return "START"
 
-    return "先発ではない"
+    return ""
 
 
 def discord_send(message):
