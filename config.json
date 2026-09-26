@@ -1,0 +1,11 @@
+{
+  "players": [
+    {
+      "name": "谷村 海那",
+      "team": "横浜Ｆ・マリノス"
+    }
+  ],
+  "lookahead_days": 14,
+  "check_minutes_before": 120,
+  "discord_webhook_env": "DISCORD_WEBHOOK_URL"
+}
