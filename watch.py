@@ -399,7 +399,7 @@ def main():
         fixture = f"{home} vs {away} {match_time}"
 
         new_messages.append(
-            f"{name}：**{status}**\n"
+            f"{name}：{status}\n"
             f"{fixture}\n"
             f"{url}"
         )
