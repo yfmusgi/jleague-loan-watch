@@ -1,11 +1,33 @@
 {
   "players": [
     {
+      "name": "木村 凌也",
+      "team": "テゲバジャーロ宮崎"
+    },
+    {
+      "name": "村上 慶",
+      "team": "松本山雅FC"
+    }
+    {
+      "name": "望月 耕平",
+      "team": "ツエーゲン金沢"
+    }
+    {
       "name": "樋口 有斗",
       "team": "福島ユナイテッドFC"
     }
+    {
+      "name": "浅田 大翔",
+      "team": "FC岐阜"
+    }
+    {
+      "name": "田川 知樹",
+      "team": "北海道コンサドーレ札幌"
+    }
+    {
+      "name": "埜口 怜乃",
+      "team": "アスルクラロ沼津"
+    }
   ],
-  "lookahead_days": 14,
-  "check_minutes_before": 120,
-  "discord_webhook_env": "DISCORD_WEBHOOK_URL"
+  "lookahead_days": 14
 }
