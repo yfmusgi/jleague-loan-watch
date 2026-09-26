@@ -32,6 +32,7 @@ def get(url):
 
 def match_links(html):
     soup = BeautifulSoup(html, "html.parser")
+
     out = []
     seen = set()
 
@@ -147,6 +148,7 @@ def page_info(url):
     soup = BeautifulSoup(html, "html.parser")
 
     text = soup.get_text("\n", strip=True)
+
     lines = [
         x.strip()
         for x in text.splitlines()
@@ -240,32 +242,37 @@ def main():
             f"({len(info['starting_players'])}人)"
         )
 
-for p in players:
-    team = p.get("team", "")
+        for p in players:
+            team = p.get("team", "")
 
-    if team:
-        if team != info["home"] and team != info["away"]:
-            continue
+            # チームが指定されている場合、
+            # そのチームの試合だけ対象にする
+            if team:
+                if (
+                    team != info["home"]
+                    and team != info["away"]
+                ):
+                    continue
 
-    status = player_status(
-        info,
-        p["name"],
-    )
-
-    if status != "未発表":
-        results.append(
-            (
+            status = player_status(
+                info,
                 p["name"],
-                status,
-                info["home"],
-                info["away"],
-                url,
             )
-        )
+
+            if status != "未発表":
+                results.append(
+                    (
+                        p["name"],
+                        status,
+                        info["home"],
+                        info["away"],
+                        url,
+                    )
+                )
 
     if not results:
         print(
-            "スタメン発表済みの対象選手はありません。"
+            "対象チームのスタメン発表済み試合はありません。"
         )
         return
 
