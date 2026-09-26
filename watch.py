@@ -177,12 +177,19 @@ def page_info(url):
     }
 
 
+def normalize_name(name):
+    return re.sub(r"\s+", "", name)
+
+
 def player_status(info, player_name):
     if not info["published"]:
         return "未発表"
 
-    if player_name in info["starting_players"]:
-        return "先発"
+    target = normalize_name(player_name)
+
+    for name in info["starting_players"]:
+        if normalize_name(name) == target:
+            return "先発"
 
     return "先発ではない"
 
