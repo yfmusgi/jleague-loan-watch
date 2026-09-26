@@ -107,65 +107,65 @@ def extract_fixture(soup):
     return "", ""
 
 
-def extract_starting_players(lines):
-    players = []
+def extract_lineup_players(soup):
+    """
+    Jリーグ公式のHTMLから
+    スタメンとベンチの選手名を取得する。
+    """
 
-    start = None
-
-    for i, line in enumerate(lines):
-        if line == "スターティングメンバー発表":
-            start = i + 1
-            break
-
-    if start is None:
-        return players
-
-    end = len(lines)
-
-    for i in range(start, len(lines)):
-        if lines[i] == "見どころ":
-            end = i
-            break
-
-    block = lines[start:end]
-
-    position_pattern = re.compile(
-        r"^(GK|DF|MF|FW)\s+\d+$"
+    # スターティングメンバー
+    starting_section = soup.select_one(
+        "section.p-game-details-lineup-tab__starting-members"
     )
 
-    for i in range(len(block) - 1):
-        position_line = block[i]
-        name_line = block[i + 1]
+    starting_names = []
 
-        if position_pattern.match(position_line):
-            players.append(name_line)
+    if starting_section:
+        starting_names = [
+            x.get_text(strip=True)
+            for x in starting_section.select(
+                ".m-lineup-list-item__name"
+            )
+        ]
 
-    return players
+    # 控えメンバー
+    reserve_section = soup.select_one(
+        "section.p-game-details-lineup-tab__reserve-members"
+    )
+
+    reserve_names = []
+
+    if reserve_section:
+        reserve_names = [
+            x.get_text(strip=True)
+            for x in reserve_section.select(
+                ".m-lineup-list-item__name"
+            )
+        ]
+
+    return starting_names, reserve_names
 
 
 def page_info(url):
     html = get(url)
     soup = BeautifulSoup(html, "html.parser")
 
-    text = soup.get_text("\n", strip=True)
-
-    lines = [
-        x.strip()
-        for x in text.splitlines()
-        if x.strip()
-    ]
-
     home, away = extract_fixture(soup)
 
-    starting_players = extract_starting_players(lines)
+    starting_players, reserve_players = extract_lineup_players(
+        soup
+    )
 
-    if not starting_players:
+    # スタメンもベンチもまだ取得できない場合は
+    # スタメン発表前と判断する
+    if not starting_players and not reserve_players:
         return {
             "url": url,
             "published": False,
             "home": home,
             "away": away,
             "starting_players": [],
+            "reserve_players": [],
         }
 
     return {
@@ -174,6 +174,7 @@ def page_info(url):
         "home": home,
         "away": away,
         "starting_players": starting_players,
+        "reserve_players": reserve_players,
     }
 
 
@@ -182,16 +183,29 @@ def normalize_name(name):
 
 
 def player_status(info, player_name):
+    """
+    対象選手が
+    先発 / ベンチ / メンバー外
+    のどれなのか判定する。
+    """
+
     if not info["published"]:
         return "未発表"
 
     target = normalize_name(player_name)
 
+    # 先発
     for name in info["starting_players"]:
         if normalize_name(name) == target:
             return "先発"
 
-    return "先発ではない"
+    # ベンチ
+    for name in info["reserve_players"]:
+        if normalize_name(name) == target:
+            return "ベンチ"
+
+    # スタメンにもベンチにもいない
+    return "メンバー外"
 
 
 def discord_send(message):
@@ -246,7 +260,8 @@ def main():
         print(
             f"スタメン取得: "
             f"{info['home']} vs {info['away']} "
-            f"({len(info['starting_players'])}人)"
+            f"(先発 {len(info['starting_players'])}人 / "
+            f"ベンチ {len(info['reserve_players'])}人)"
         )
 
         for p in players:
