@@ -156,11 +156,27 @@ def page_info(url):
     html = get(url)
     soup = BeautifulSoup(html, "html.parser")
 
+    print(
+        "starting-members:",
+        "p-game-details-lineup-tab__starting-members" in html
+    )
+
+    print(
+        "reserve-members:",
+        "p-game-details-lineup-tab__reserve-members" in html
+    )
+
+    print(
+        "スターティングメンバー:",
+        "スターティングメンバー" in html
+    )
+
     home, away = extract_fixture(soup)
 
     starting_players, reserve_players = extract_lineup_players(
         soup
     )
+
 
     # デバッグ用
     print(
