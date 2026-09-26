@@ -110,10 +110,13 @@ def extract_fixture(soup):
 def extract_lineup_players(soup):
     """
     Jリーグ公式のHTMLから
-    スタメンとベンチの選手名を取得する。
+    スタメンとベンチの選手名を、それぞれのエリアから取得する。
     """
 
+    # -------------------------
     # スターティングメンバー
+    # -------------------------
+
     starting_section = soup.select_one(
         "section.p-game-details-lineup-tab__starting-members"
     )
@@ -128,7 +131,10 @@ def extract_lineup_players(soup):
             )
         ]
 
+    # -------------------------
     # 控えメンバー
+    # -------------------------
+
     reserve_section = soup.select_one(
         "section.p-game-details-lineup-tab__reserve-members"
     )
@@ -156,8 +162,15 @@ def page_info(url):
         soup
     )
 
-    # スタメンもベンチもまだ取得できない場合は
-    # スタメン発表前と判断する
+    # デバッグ用
+    print(
+        f"HTML判定: "
+        f"スタメンエリア={'あり' if starting_players else 'なし'} / "
+        f"ベンチエリア={'あり' if reserve_players else 'なし'}"
+    )
+
+    # スタメンもベンチも取得できなければ
+    # スタメン発表前と判断
     if not starting_players and not reserve_players:
         return {
             "url": url,
@@ -204,7 +217,7 @@ def player_status(info, player_name):
         if normalize_name(name) == target:
             return "ベンチ"
 
-    # スタメンにもベンチにもいない
+    # どちらにもいない
     return "メンバー外"
 
 
