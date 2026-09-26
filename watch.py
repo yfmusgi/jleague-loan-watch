@@ -240,22 +240,28 @@ def main():
             f"({len(info['starting_players'])}人)"
         )
 
-        for p in players:
-            status = player_status(
-                info,
-                p["name"],
-            )
+for p in players:
+    team = p.get("team", "")
 
-            if status != "未発表":
-                results.append(
-                    (
-                        p["name"],
-                        status,
-                        info["home"],
-                        info["away"],
-                        url,
-                    )
-                )
+    if team:
+        if team != info["home"] and team != info["away"]:
+            continue
+
+    status = player_status(
+        info,
+        p["name"],
+    )
+
+    if status != "未発表":
+        results.append(
+            (
+                p["name"],
+                status,
+                info["home"],
+                info["away"],
+                url,
+            )
+        )
 
     if not results:
         print(
