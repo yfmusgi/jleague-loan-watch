@@ -107,6 +107,52 @@ def extract_fixture(soup):
     return "", ""
 
 
+def extract_match_datetime(lines):
+    """
+    Jリーグ公式ページから試合日時を取得する。
+    例：
+    2026/9/26 (土) 17:00 KO
+    """
+
+    pattern = re.compile(
+        r"(\d{4})/(\d{1,2})/(\d{1,2})\s+"
+        r"\((.)\)\s+"
+        r"(\d{1,2}):(\d{2})\s+KO"
+    )
+
+    for line in lines:
+        m = pattern.search(line)
+
+        if m:
+            year = int(m.group(1))
+            month = int(m.group(2))
+            day = int(m.group(3))
+            weekday = m.group(4)
+            hour = int(m.group(5))
+            minute = int(m.group(6))
+
+            match_datetime = datetime(
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                tzinfo=JST,
+            )
+
+            return {
+                "date": f"{month}/{day}({weekday})",
+                "time": f"{hour}:{minute:02d}",
+                "datetime": match_datetime,
+            }
+
+    return {
+        "date": "",
+        "time": "",
+        "datetime": None,
+    }
+
+
 def extract_starting_players(lines):
     players = []
 
@@ -157,6 +203,8 @@ def page_info(url):
 
     home, away = extract_fixture(soup)
 
+    match_info = extract_match_datetime(lines)
+
     starting_players = extract_starting_players(lines)
 
     if not starting_players:
@@ -165,6 +213,9 @@ def page_info(url):
             "published": False,
             "home": home,
             "away": away,
+            "date": match_info["date"],
+            "time": match_info["time"],
+            "datetime": match_info["datetime"],
             "starting_players": [],
         }
 
@@ -173,6 +224,9 @@ def page_info(url):
         "published": True,
         "home": home,
         "away": away,
+        "date": match_info["date"],
+        "time": match_info["time"],
+        "datetime": match_info["datetime"],
         "starting_players": starting_players,
     }
 
@@ -252,8 +306,6 @@ def main():
         for p in players:
             team = p.get("team", "")
 
-            # チームが指定されている場合、
-            # そのチームの試合だけ対象にする
             if team:
                 if (
                     team != info["home"]
@@ -273,6 +325,9 @@ def main():
                         status,
                         info["home"],
                         info["away"],
+                        info["date"],
+                        info["time"],
+                        info["datetime"],
                         url,
                     )
                 )
@@ -282,6 +337,14 @@ def main():
             "対象チームのスタメン発表済み試合はありません。"
         )
         return
+
+    # 試合日時順に並べる
+    results.sort(
+        key=lambda x: (
+            x[6] is None,
+            x[6] if x[6] else datetime.max.replace(tzinfo=JST),
+        )
+    )
 
     state_path = Path(".state.json")
 
@@ -302,7 +365,19 @@ def main():
     new_messages = []
     new_state = set(old)
 
-    for name, status, home, away, url in results:
+    current_date = None
+
+    for (
+        name,
+        status,
+        home,
+        away,
+        match_date,
+        match_time,
+        match_datetime,
+        url,
+    ) in results:
+
         key = f"{url}|{name}|{status}"
 
         if key in old:
@@ -310,10 +385,18 @@ def main():
 
         new_state.add(key)
 
-        if home and away:
-            fixture = f"{home} vs {away}"
-        else:
-            fixture = url
+        # 試合日が変わったら日付を表示
+        if match_date != current_date:
+            if new_messages:
+                new_messages.append("")
+
+            new_messages.append(
+                f"試合日 {match_date}"
+            )
+
+            current_date = match_date
+
+        fixture = f"{home} vs {away} {match_time}"
 
         new_messages.append(
             f"⚽ {name}：**{status}**\n"
@@ -332,7 +415,7 @@ def main():
 
     if new_messages:
         discord_send(
-            "\n\n".join(new_messages)
+            "\n".join(new_messages)
         )
     else:
         print(
